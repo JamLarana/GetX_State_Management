@@ -27,15 +27,16 @@ class _BottomNavBarState extends State<BottomNavBar> {
         currentIndex: _currentIndex,
         onTap: _omItemTapped,
         items: [
+          //  Changed to label, cause title is deprecated
           BottomNavigationBarItem(
-            title: Text('Home'),
+            label: 'Home',
             icon: Icon(
               Icons.home,
               color: _currentIndex == 0 ? Colors.blue : Colors.grey,
             ),
           ),
           BottomNavigationBarItem(
-            title: Text('Favorites'),
+            label: 'Favorites',
             icon: Icon(
               Icons.favorite,
               color: _currentIndex == 1 ? Colors.blue : Colors.grey,
@@ -54,28 +55,31 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
 // User Model
 class User {
-  String title;
-  bool isFavorited = false; // I don't know where/how to use this
+  // Added the final keyword so that the title cant be changed afterwards, but the is favorited can
+  final String title;
+  bool isFavorited;
 
+// added false as the default value if isFavorited is not provided
   User({
     this.title,
-    this.isFavorited,
+    this.isFavorited = false,
   });
 }
 
 // Controller
 class UserController extends GetxController {
-  var user = List<User>().obs;
-}
+// Moved it into the controller
+  List<User> userList = [
+    User(title: 'Lilly'),
+    User(title: 'Bob'),
+    User(title: 'Marcus'),
+    User(title: 'Ian'),
+  ];
 
-// List of Users
-// what I don't understand is that var user is an RxList, while userList is not?
-final List<User> userList = [
-  User(title: 'Lilly'),
-  User(title: 'Bob'),
-  User(title: 'Marcus'),
-  User(title: 'Ian'),
-];
+  void toggleFavorite(User user) {
+    user.isFavorited = !user.isFavorited;
+  }
+}
 
 // Home Screen
 class HomeScreen extends StatelessWidget {
@@ -89,7 +93,6 @@ class HomeScreen extends StatelessWidget {
       ),
       body: ListView.builder(
         itemBuilder: (BuildContext context, int index) {
-          final User myUser = userList[index];
           return Stack(
             children: [
               Container(
@@ -97,7 +100,8 @@ class HomeScreen extends StatelessWidget {
                 height: 150,
                 color: Colors.black45,
                 child: Center(
-                  child: Text(myUser.title, style: TextStyle(fontSize: 24)),
+                  child: Text(userController.userList[index].title,
+                      style: TextStyle(fontSize: 24)),
                 ),
               ),
               Positioned(
@@ -105,7 +109,8 @@ class HomeScreen extends StatelessWidget {
                 right: 15.0,
                 child: GestureDetector(
                   onTap: () {
-                    userController.user.add(User(title: myUser.title));
+                    userController
+                        .toggleFavorite(userController.userList[index]);
                     print('Added to favorites');
                   },
                   child: Icon(Icons.favorite_border, size: 40),
@@ -114,7 +119,7 @@ class HomeScreen extends StatelessWidget {
             ],
           );
         },
-        itemCount: userList.length,
+        itemCount: userController.userList.length,
       ),
     );
   }
@@ -138,7 +143,11 @@ class FavoritedScreen extends StatelessWidget {
                   height: 110,
                   color: Colors.black26,
                   child: Center(
-                    child: Text(userController.user[index].title,
+                    child: Text(
+                        userController.userList
+                            .where((element) => element.isFavorited == true)
+                            .toList()[index]
+                            .title,
                         style: TextStyle(fontSize: 24)),
                   ),
                 ),
@@ -146,14 +155,21 @@ class FavoritedScreen extends StatelessWidget {
                   top: 15.0,
                   right: 15.0,
                   child: GestureDetector(
-                    // onTap: ??  // I want to remove the item onTap
+                    // Calls the togglesFavorites passing the current user so that the isFavorited property is altered
+                    onTap: () => userController.toggleFavorite(userController
+                        .userList
+                        .where((element) => element.isFavorited == true)
+                        .toList()[index]),
                     child: Icon(Icons.favorite, size: 40, color: Colors.red),
                   ),
                 ),
               ],
             );
           },
-          itemCount: userController.user.length,
+          itemCount: userController.userList
+              .where((element) => element.isFavorited == true)
+              .toList()
+              .length,
         ),
       ),
     );
