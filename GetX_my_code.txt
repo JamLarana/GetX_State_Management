@@ -1,0 +1,161 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+class BottomNavBar extends StatefulWidget {
+  @override
+  _BottomNavBarState createState() => _BottomNavBarState();
+}
+
+class _BottomNavBarState extends State<BottomNavBar> {
+  int _currentIndex = 0;
+  PageController _pageController = PageController();
+  List<Widget> _screens = [HomeScreen(), FavoritedScreen()];
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _omItemTapped(int selectedIndex) {
+    _pageController.jumpToPage(selectedIndex);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _omItemTapped,
+        items: [
+          BottomNavigationBarItem(
+            title: Text('Home'),
+            icon: Icon(
+              Icons.home,
+              color: _currentIndex == 0 ? Colors.blue : Colors.grey,
+            ),
+          ),
+          BottomNavigationBarItem(
+            title: Text('Favorites'),
+            icon: Icon(
+              Icons.favorite,
+              color: _currentIndex == 1 ? Colors.blue : Colors.grey,
+            ),
+          ),
+        ],
+      ),
+      body: PageView(
+        controller: _pageController,
+        children: _screens,
+        onPageChanged: _onPageChanged,
+      ),
+    );
+  }
+}
+
+// User Model
+class User {
+  String title;
+  bool isFavorited = false; // I don't know where/how to use this
+
+  User({
+    this.title,
+    this.isFavorited,
+  });
+}
+
+// Controller
+class UserController extends GetxController {
+  var user = List<User>().obs;
+}
+
+// List of Users
+// what I don't understand is that var user is an RxList, while userList is not?
+final List<User> userList = [
+  User(title: 'Lilly'),
+  User(title: 'Bob'),
+  User(title: 'Marcus'),
+  User(title: 'Ian'),
+];
+
+// Home Screen
+class HomeScreen extends StatelessWidget {
+  final UserController userController = Get.find<UserController>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Home Screen'),
+      ),
+      body: ListView.builder(
+        itemBuilder: (BuildContext context, int index) {
+          final User myUser = userList[index];
+          return Stack(
+            children: [
+              Container(
+                margin: EdgeInsets.only(bottom: 8),
+                height: 150,
+                color: Colors.black45,
+                child: Center(
+                  child: Text(myUser.title, style: TextStyle(fontSize: 24)),
+                ),
+              ),
+              Positioned(
+                top: 15.0,
+                right: 15.0,
+                child: GestureDetector(
+                  onTap: () {
+                    userController.user.add(User(title: myUser.title));
+                    print('Added to favorites');
+                  },
+                  child: Icon(Icons.favorite_border, size: 40),
+                ),
+              ),
+            ],
+          );
+        },
+        itemCount: userList.length,
+      ),
+    );
+  }
+}
+
+// Favorites Screen
+class FavoritedScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final UserController userController = Get.put(UserController());
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Favorites Screen')),
+      body: Obx(
+        () => ListView.builder(
+          itemBuilder: (BuildContext context, int index) {
+            return Stack(
+              children: [
+                Container(
+                  margin: EdgeInsets.only(bottom: 8),
+                  height: 110,
+                  color: Colors.black26,
+                  child: Center(
+                    child: Text(userController.user[index].title,
+                        style: TextStyle(fontSize: 24)),
+                  ),
+                ),
+                Positioned(
+                  top: 15.0,
+                  right: 15.0,
+                  child: GestureDetector(
+                    // onTap: ??  // I want to remove the item onTap
+                    child: Icon(Icons.favorite, size: 40, color: Colors.red),
+                  ),
+                ),
+              ],
+            );
+          },
+          itemCount: userController.user.length,
+        ),
+      ),
+    );
+  }
+}
